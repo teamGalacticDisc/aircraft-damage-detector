@@ -18,7 +18,7 @@ That is all it does. It does not decide whether the aircraft can fly.
 
 ## The pictures it learned from
 
-I used the Aircraft Damage Detection dataset from the youssef-donia-fhktl workspace on Roboflow, version 5 (the one named Extra Finetuning, current best). It has 3,174 photos, and people already drew boxes around every crack and dent in them.
+I used the Aircraft Damage Detection dataset from the youssef-donia-fhktl workspace on Roboflow, version 5 (the one named Extra Finetuning, current best). It has 3,174 photos, and people already marked every crack and dent in them, either with a box or by tracing an outline around it.
 
 | Group | Photos | What it is for |
 |---|---|---|
@@ -50,7 +50,7 @@ Every epoch the model took a practice quiz on the validation photos. The score h
 |---|---|---|
 | 1 | 0.05 | Guessing. Boxes everywhere. |
 | 5 | 0.19 | Starting to notice the damage |
-| 10 | 0.39 | Finding most big cracks and dents |
+| 10 | 0.39 | Finding some cracks and dents, but still missing a lot |
 | 15 | 0.55 | Boxes getting tighter and more accurate |
 | 20 | **0.59** | Done. A little above the professor's 0.58 |
 
@@ -81,13 +81,49 @@ This chart shows every epoch at once. The loss charts going down mean the model 
 
 **Recall** answers: out of all the real damage, how much did the model find? A little more than half.
 
-That recall number is the most important thing in this whole project. **The model misses about 4 out of every 10 damage spots.** That is exactly why it can only be a helper. If an inspector trusted it alone, a lot of damage would get missed. Used the right way, as a second set of eyes that points at places to look, it can still catch things a tired person might walk past.
+That recall number is the most important thing in this whole project. You can see it with your own eyes in the confusion matrix below. **The model misses about 4 out of every 10 damage spots.** That is exactly why it can only be a helper. If an inspector trusted it alone, a lot of damage would get missed. Used the right way, as a second set of eyes that points at places to look, it can still catch things a tired person might walk past.
+
+## The confusion matrix
+
+A confusion matrix is a scoreboard that shows every time the model was right, every time it was wrong, and what kind of wrong it was. I ran it on the 449 validation photos with the same setting `detect.py` uses: the model only counts a box if it is at least 25 percent sure.
+
+![Confusion matrix](results/confusion_matrix.png)
+
+How to read it: each **column** is the truth (what was really in the photo). Each **row** is what the model said. Background means nothing there.
+
+| | Really a crack | Really a dent | Really nothing |
+|---|---|---|---|
+| Model said crack | **326** right | 0 | 141 false alarms |
+| Model said dent | 0 | **291** right | 173 false alarms |
+| Model said nothing | 200 missed | 191 missed | |
+
+What this tells me in plain words:
+
+* **It never mixed up a crack and a dent.** Those two boxes are 0. When it finds damage, it names it correctly.
+* **It found 326 of 526 cracks (62 percent) and 291 of 482 dents (60 percent).** The other 391 spots it walked right past. That is the about 4 in 10 missed from above.
+* **It raised 314 false alarms**, drawing a box where nothing was marked. I have not gone through each one, so I cannot say yet what fooled it. Some could even be real damage the person labeling the photos skipped.
+
+The big lesson: the problem is not that the model gets confused. The problem is that it does not see everything. That is a lot safer for a helper tool, because a missed spot still gets looked at by the inspector who walks the whole aircraft anyway.
+
+## Model guesses next to the answer key
+
+The left picture is what the people who made the dataset marked. The right picture is what my model found on the same photos. You can spot both the hits and the misses yourself.
+
+| Answer key | Model guesses |
+|---|---|
+| ![Answer key](results/images/validation_answer_key.jpg) | ![Model guesses](results/images/validation_predictions.jpg) |
+
+## Precision and recall together
+
+![Precision recall curve](results/precision_recall_curve.png)
+
+This chart shows a trade. If you make the model more careful (only show boxes it is very sure about), you get fewer false alarms but it misses more damage. If you make it less careful, it finds more damage but cries wolf more often. The bigger the area under the line, the better the model. For an inspection helper I would rather it be a little less careful, because a false alarm costs an inspector a few seconds and a miss could cost a lot more.
 
 ## What to keep in mind
 
 * It was trained on general aircraft photos from the internet, not F/A-18 inspection photos. Before anyone used something like this for real, it would need to be retrained and tested on photos from that aircraft.
 * It only knows two things, cracks and dents. It has never been taught corrosion, missing fasteners or anything else.
-* A few photos in the dataset had labels in the wrong format (3 in validation and 2 in test), so the training tool skipped them. That is why the results show 449 validation photos instead of 452.
+* 67 photos in the dataset (62 training, 3 validation, 2 test) had their damage marked two different ways in the same label file, some with boxes and some with traced outlines. YOLO throws out any photo that mixes the two, so the model never learned from those 67 photos. That is why the results show 449 validation photos instead of 452 and 146 test photos instead of 148.
 * 20 epochs is short. The scores were still climbing at the end, so more epochs would probably help.
 
 ## Try it yourself
@@ -114,7 +150,8 @@ python evaluate.py
 | `model/best.pt` | The trained model |
 | `results/results.csv` | The score for every epoch |
 | `results/results.png` | Chart of all 20 epochs |
-| `results/confusion_matrix_normalized.png` | Shows when it mixes up crack, dent and background |
+| `results/confusion_matrix.png` | Scoreboard of hits, misses and false alarms on the validation photos |
+| `results/precision_recall_curve.png` | The trade between false alarms and misses |
 | `results/images/` | Before and after pictures, plus model guesses next to the answer key |
 
 ## Credits
