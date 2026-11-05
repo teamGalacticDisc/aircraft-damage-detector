@@ -28,7 +28,9 @@ I used the Aircraft Damage Detection dataset from the youssef-donia-fhktl worksp
 
 **Why version 5?** My professor first gave us a different dataset, and a test run on it only reached a score of about 0.02, which means it could barely learn anything. The professor switched the class to this one because it reached about 0.58. Good pictures with good labels matter more than anything else.
 
-**Why keep the test photos separate?** If you study the exam questions, a perfect score does not prove you learned anything. Keeping the test photos hidden until the end shows how the model does on photos it has never seen, which is what would happen on a real flight line.
+**Why keep the test photos separate?** If you study the exam questions, a perfect score does not prove you learned anything. Keeping the test photos hidden until the end is supposed to show how the model does on photos it has never seen, which is what would happen on a real flight line.
+
+**A catch I found in this dataset.** The dataset makers took each original photo and made several copies of it, a little brighter, darker or flipped, and those copies got spread across all three groups. For example, the same damaged wing (photo 158) shows up 3 times in training and 2 times in validation. All 99 original photos behind the validation pictures and all 37 behind the test pictures also show up in training. So the model has seen a close cousin of almost every quiz and exam photo. That means my scores are probably higher than what it would get on brand new photos from a real hangar. My professor's 0.58 used the same dataset, so comparing with it is still fair.
 
 ## How I trained it
 
@@ -66,7 +68,7 @@ This chart shows every epoch at once. The loss charts going down mean the model 
 
 ## Final results
 
-| | Validation | Test (never seen) |
+| | Validation | Test |
 |---|---|---|
 | mAP50 | 0.595 | 0.627 |
 | Precision | 0.66 | 0.73 |
