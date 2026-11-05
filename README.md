@@ -192,6 +192,10 @@ python evaluate.py
 
 `train.py` uses the first graphics card. If you do not have one, change `device=0` to `device="cpu"` and plan on most of a day.
 
+## How I use AI to check my work
+
+This is an AI class, so I also wrote down how I use GenAI tools to learn instead of doing the work for me. [PROMPTS.md](PROMPTS.md) has my professor's four part prompt method (Role, Task, Context, Format), the six prompts that go with it, and a filled in prompt that asks Google Gemini or Claude to review this project and tell me what it would do differently.
+
 ## Files
 
 | File | What it is |
@@ -200,6 +204,7 @@ python evaluate.py
 | `train.py` | Teaches the model |
 | `evaluate.py` | Grades the model on validation and test photos |
 | `detect.py` | Runs the model on your own photo |
+| `PROMPTS.md` | The prompt method I use with GenAI, plus a ready to paste project review prompt |
 | `model/best.pt` | The final trained model |
 | `model/first_model_20_epochs.pt` | My first try, kept so you can compare |
 | `results/results.csv` | The score for every epoch of the final model |
