@@ -322,7 +322,7 @@ Leak: many file names follow N_k, where each k is an augmented copy (brighter, d
 </label_fix>
 
 <training>
-Ultralytics 8.4, pretrained yolov8n.pt, imgsz 640, batch 16, seed 0, patience 15, default augmentation, one RTX 2080 Super. One seed per run.
+Ultralytics 8.4, pretrained yolov8n.pt, imgsz 640, batch 16, seed 0, patience 15, default augmentation, one RTX 2080 Super. One seed per run. Every run below was graded on the same fixed label validation and test photos, including the two runs that were trained on the old labels.
 </training>
 
 <results>
@@ -425,3 +425,98 @@ I ran the sharper prompt above. This is a summary of what came back, checked aga
 
 * The count of about 246 original photos comes from grouping the file names in the dataset myself, not from the AI. 160 follow the N_k pattern. Another 85 or so are grouped by the name before Roboflow's `.rf.` tag, and all of those are only in train. Of the 160, 96 also show up in validation, 34 in test, and 3 in both, which gives the 99 and 37 from the README.
 * Every other number above matches the README and `results/eval_report.json`.
+
+---
+
+## What ChatGPT said
+
+I pasted the sharper prompt above into **ChatGPT** on November 5, 2026. I did not paste my README with it, which is why it says it has not seen it. Everything in the quote below is ChatGPT's answer, copied word for word, including the links it gave to the Ultralytics docs. Credit for this review goes to ChatGPT by OpenAI. The screenshots of the original answer are in [`results/ai_review/`](results/ai_review/).
+
+<details>
+<summary>Screenshots of ChatGPT's answer</summary>
+
+![ChatGPT review part 1](results/ai_review/chatgpt_review_1.png)
+![ChatGPT review part 2](results/ai_review/chatgpt_review_2.png)
+![ChatGPT review part 3](results/ai_review/chatgpt_review_3.png)
+
+</details>
+
+> ### Data split and leak
+>
+> **Kept:** Tracing “3,174” images to “about 246” originals and disclosing the overlap was essential.
+>
+> **Change:** All “99” validation sources and “37” test sources appear in training: **performance on unseen source photos remains unknown**. No defensible percentage of “0.672” can be assigned to leakage. Split originals first, keeping derivatives—and identifiable aircraft/session groups—together; augment training only. Retrain from original pretrained weights, because your existing trained weights already saw the held-out sources. Although your stated choice used validation, repeatedly inspecting scores on the “148” test images means they were not an untouched final audit. Freeze the next protocol before testing; entirely new source photos provide the strongest final check.
+>
+> **Check:** Zero source/known-session overlap between partitions, verified through a source manifest and visual near-duplicate audit. Report original-source counts and class coverage per partition. Disclose that reusing this dataset cannot erase earlier test exposure.
+>
+> ### Labels
+>
+> **Kept:** Recovering the “67 images” and reaching “0 images are skipped” fixes a real data-loading problem.
+>
+> **Change:** In `fix_labels.py`, “IoU … above 0.5” measures box overlap; overlap alone does not establish that two marks describe the same defect. Verify that removal respects defect identity and class, and inspect boxes affected by clamping. I cannot tell whether those safeguards exist. Also, “62 train, 3 val, 2 test” changed together, so “0.610” versus “0.632” does not isolate a training improvement: the evaluation population changed too. The test change from “0.692” to “0.672” cannot isolate the repair’s effect either.
+>
+> **Check:** Visually audit all “67 images,” including the “15” removed duplicates; reconcile “359 marks” with retained boxes and documented removals. Compare old/fixed-label training conditions against **identical, audited evaluation images and labels**.
+>
+> ### Model and epochs
+>
+> **Kept:** Choosing by validation performance and “about 3 times smaller” is a defensible practical decision.
+>
+> **Change:** “0.632” versus “0.623” is a difference of 0.009 with “one seed per run”; superiority remains provisional. Likewise, “0.588” to “0.610” establishes an observed improvement on this split, but cannot establish a reliable benefit from longer training. After repairing the split, compare label versions and “20” versus “60” epochs one factor at a time, then compare v8n/v8s. Keep evaluation data and checkpoint-selection rules fixed. Because cracks matter most, model selection should include crack recall at the same false-alarm allowance.
+>
+> **Check:** Start with three matched seeds—settings controlling training randomness—and report means, ranges, and paired differences. Three is a practical starting point, not a guarantee of stability. Confirm `seed` and `epochs` in [Ultralytics Train Settings](https://docs.ultralytics.com/modes/train/#train-settings).
+>
+> ### Threshold
+>
+> **Kept:** Prioritizing missed cracks over false alarms fits your stated purpose.
+>
+> **Change:** “0.25” has no demonstrated connection to your inspection priorities; it missed “162” of “538” labeled cracks. Agree on a minimum crack recall and tolerable false alarms per image, then try several confidence cutoffs on clean validation data. Recall means the fraction of labeled defects found. Confirm the `conf` setting under [Validation Arguments](https://docs.ultralytics.com/modes/val/#arguments-for-yolo-model-validation); I cannot identify the right cutoff from these aggregate counts.
+>
+> **Check:** Your current matrix gives crack recall **376/538 = 69.9%**, dent recall **303/484 = 62.6%**, and **(155+198)/452 = 0.78 false alarms per augmented image**. Recompute on independent originals, freeze the chosen threshold before testing, and report failure if no threshold meets both targets.
+>
+> ### Evaluation
+>
+> **Kept:** Reporting misses and false alarms makes the results more interpretable than mAP alone.
+>
+> **Change:** Document why “0.61” summary recall differs from matrix-derived **679/1,022 = 66.4%**. Both can be correct: current Ultralytics documentation reports summary precision/recall at the threshold maximizing mean F1, a score balancing precision and recall. Class averaging and box-matching rules can also differ. Check the [Metrics reference](https://docs.ultralytics.com/reference/utils/metrics/) against your exact “8.4” patch and evaluation settings before assigning the explanation. Also, “148” images from “37” sources are not 148 independent trials. Coverage of undamaged skin, lighting conditions, and faint cracks is unknown from your “3,174” image total.
+>
+> **Check:** Report per-class recall and false alarms/image with 95% uncertainty intervals obtained by repeatedly resampling whole independent source groups. Audit misses by size/lighting and measure alarms on verified undamaged photos. For “48 more cracks,” “11 more dents,” and “37 more false alarms,” verify identical labels and matching rules, and list gained **and lost** detections: these are net changes. Keep mAP evaluation separate from the operational confidence cutoff; filtering predictions too aggressively can reduce measured mAP.
+>
+> ### README
+>
+> **Kept:** “Helper only,” with a full human inspection, is an appropriately limited purpose.
+>
+> **Change:** I have not seen your README. From the supplied summary, “Ultralytics 8.4” and “default augmentation” are insufficient for exact reproduction. Record the full version, effective settings, split manifest, label version, and evaluated checkpoint. Distinguish stopping at “89” from the epoch of the selected checkpoint. Explain which conclusions remain provisional. The professor’s “0.58” is useful reproduction context, but matching it cannot resolve the source overlap. Confirm `patience` in [Train Settings](https://docs.ultralytics.com/modes/train/#train-settings); current documentation may differ from your installed version.
+>
+> **Check:** A classmate can reproduce the rounded metrics from saved weights and identified data without guessing, and distinguish historical leaky results from new independent results.
+>
+> ### Top 5 fixes
+>
+> 1. **Create independent splits, retrain, and protect the final test — effort: large.** Addresses the “99”/“37” overlapping sources and repeated test inspection.
+> 2. **Audit labels and standardize evaluation ground truth — effort: medium.** Addresses `fix_labels.py` and the changed “3 val, 2 test” images.
+> 3. **Select a threshold for crack recall and workload — effort: medium.** Addresses the “162” missed cracks at “0.25.”
+> 4. **Measure uncertainty and representative performance — effort: large.** Addresses only “37” test sources and unknown undamaged-skin coverage.
+> 5. **Repeat controlled model/epoch comparisons — effort: large.** Addresses the “0.632” versus “0.623” gap from “one seed per run.”
+
+### My notes on ChatGPT's answer
+
+* **Its math is right.** 376 of 538 is 69.9 percent, 303 of 484 is 62.6 percent, and 353 false alarms over 452 photos is 0.78 per photo. I checked each one.
+* **One point is based on something my prompt left out.** It says the evaluation photos changed between the old label and fixed label runs. They did not. Every run in the table was graded on the same fixed label photos. My sharper prompt forgot to say that, so ChatGPT could not know. I added that line to the prompt above.
+* **The 0.61 versus 66 percent recall point is a good catch.** The 0.61 comes from Ultralytics picking its own best threshold. The 66 percent comes from my confusion matrix at 0.25. Both are real, they just answer slightly different questions.
+* **It is right that filtering lowers mAP.** My own `results/eval_report.json` shows it. Validation mAP50 is 0.632 normally and drops to 0.548 when I force the 0.25 cutoff. That is why my headline mAP50 uses the normal setting.
+* **The epoch 89 point is fair.** The 100 epoch run stopped at 89, but the saved best model came from an earlier epoch. I should say which one.
+* **The links it gave go to the real Ultralytics docs** for train settings, validation arguments, and the metrics reference.
+
+## How the three reviews compare
+
+| Topic | Google Gemini | ChatGPT | Claude |
+|---|---|---|---|
+| Re-split by original photo | Fix 1 | Fix 1 | Fix 1 |
+| Stop peeking at the test set | Fix 2 | Part of fix 1 | Fix 2 |
+| Pick the threshold on purpose | Fix 3, aim for 95 percent crack recall | Fix 3, set a recall goal and a false alarm budget | Fix 3, recall goal plus false alarms per photo |
+| Check the labels by eye | Not mentioned | Fix 2 | Fix 5 |
+| Run more than one seed | Not mentioned | Fix 5 | Fix 4 |
+| Error bars on the scores | Not mentioned | Fix 4 | Not mentioned |
+| Automatic label check at load time | Fix 4 | Not mentioned | Not mentioned |
+| Stronger README warning | Fix 5 | Folded into README notes | Mentioned under README |
+
+All three put the same thing first: re-split the data so no copy of a photo is in more than one group. When three different tools agree on the top problem, that is a pretty strong sign it is the right place to start.
