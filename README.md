@@ -194,7 +194,7 @@ python evaluate.py
 
 ## How I use AI to check my work
 
-This is an AI class, so I also wrote down how I use GenAI tools to learn instead of doing the work for me. [PROMPTS.md](PROMPTS.md) has my professor's four part prompt method (Role, Task, Context, Format), the six prompts that go with it, and a filled in prompt that asks Google Gemini or Claude to review this project and tell me what it would do differently.
+This is an AI class, so I also wrote down how I use GenAI tools to learn instead of doing the work for me. [PROMPTS.md](PROMPTS.md) has my professor's four part prompt method (Role, Task, Context, Format), the six prompts that go with it, and a filled in prompt that asks Google Gemini or Claude to review this project and tell me what it would do differently. It also has the review Google Gemini gave back, with screenshots, and my notes on what I checked.
 
 ## Files
 
@@ -213,6 +213,7 @@ This is an AI class, so I also wrote down how I use GenAI tools to learn instead
 | `results/precision_recall_curve.png` | The trade between false alarms and misses |
 | `results/eval_report.json` | Every final number in one file |
 | `results/first_run/` | The same charts and log from my first try |
+| `results/ai_review/` | Screenshots of the project review from Google Gemini |
 | `results/images/` | Before and after pictures, plus model guesses next to the answer key |
 
 ## Credits

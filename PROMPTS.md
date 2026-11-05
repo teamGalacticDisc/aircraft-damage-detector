@@ -204,6 +204,78 @@ Then end with a section called Top 5 fixes, ranked by how much each would change
 
 ---
 
+## What Google Gemini said
+
+I pasted the review prompt above into **Google Gemini** on November 5, 2026. Everything in this section, from the six headings through the Top 5 fixes, is Gemini's answer, copied word for word. Credit for this review goes to Google Gemini. The screenshots of the original answer are in [`results/ai_review/`](results/ai_review/).
+
+<details>
+<summary>Screenshots of Gemini's answer</summary>
+
+![Gemini review part 1](results/ai_review/gemini_review_1.png)
+![Gemini review part 2](results/ai_review/gemini_review_2.png)
+![Gemini review part 3](results/ai_review/gemini_review_3.png)
+![Gemini review part 4](results/ai_review/gemini_review_4.png)
+
+</details>
+
+> ### 1. The data leak and how I should re-split the data
+>
+> * **What you did well:** You correctly identified the root cause of the data leak by tracing file names back to their source photos, and you were transparent enough to document it in your README.
+> * **What I would do differently and why:** I would group-split the dataset at the source photo level *before* any augmentations or training take place. Because your augmentations (flips, brightness shifts) create near-identical twins of your training images inside your validation and test sets, your model has essentially memorized the test answers during practice. In computer vision, if a source image is in the training set, none of its augmented variations can cross over into validation or test, or you are testing the model's memory rather than its ability to generalize to unseen aircraft.
+> * **How you would know it worked:** You will know the re-split worked when the file name roots of your train, validation, and test sets are completely mutually exclusive (zero overlap of source IDs like `N`), and your validation metrics drop significantly to reflect real-world performance.
+>
+> ### 2. My label fix
+>
+> * **What you did well:** Catching the mixed polygon and bounding box formatting issue that caused YOLO to silently skip 67 images is a brilliant catch that most students miss. Your custom script to clamp coordinates and weed out overlapping duplicate boxes using Intersection over Union (IoU) shows proper engineering rigor.
+> * **What I would do differently and why:** I would write an automated assertion test into the data pipeline to flag malformed annotation files upon ingestion, rather than relying on a manual script after training fails. This prevents silent dataset corruption from slipping past unnoticed in future iterations.
+> * **How you would know it worked:** You will know it worked when your training log initializes without skipping any files, and the dataset loader reports that 100% of your 3,174 images are successfully parsed into memory.
+>
+> ### 3. My choice of model size and number of epochs
+>
+> * **What you did well:** Opting for `yolov8n` (nano) over larger variants given your hardware constraints on an RTX 2080 Super is a pragmatic engineering trade-off that keeps iteration loops fast (18 seconds per epoch).
+> * **What I would do differently and why:** I would not rely on validation set plateauing to pick the final model when the validation set is structurally contaminated by data leaks. Furthermore, treating your test set as a validation guide to pick between `v8n` and `v8s` means your test set is no longer an independent final exam. I would select the model architecture based on inference latency constraints on target hardware, and use a clean cross-validation strategy to pick epoch counts.
+> * **How you would know it worked:** You will know it worked when your training curves show a stable validation loss plateau without overfitting, and your final selected model runs inference under your required millisecond threshold per frame.
+>
+> ### 4. The confidence threshold
+>
+> * **What you did well:** Recognizing that a default threshold of 0.25 might be suboptimal for a safety-critical application shows you are thinking about operational realities.
+> * **What I would do differently and why:** Since your primary objective is to ensure human inspectors do not miss structural failures, a confidence threshold of 0.25 is actually too high if it leaves 162 cracks and 181 dents completely unflagged. In a helper role where missing damage costs more than a false alarm, I would sweep the confidence threshold down toward 0.05 or 0.10 to maximize recall, accepting the trade-off of more false alarms that a human inspector can quickly dismiss.
+> * **How you would know it worked:** You will know it worked when you plot a Precision-Recall curve and select a threshold operating point where your recall for cracks reaches 95% or higher, verified against a genuinely unseen test set.
+>
+> ### 5. How I evaluated the model and whether my numbers mean what I say they mean
+>
+> * **What you did well:** You provided a thorough breakdown of your confusion matrix, highlighting absolute counts of false positives and missed detections rather than hiding behind a single flattering mAP score.
+> * **What I would do differently and why:** I would strip away all current performance claims. Because your test set contained augmented versions of training images, and because you looked at test scores to choose your final model, your reported precision and recall numbers are heavily optimistic and cannot be trusted as an indicator of real-world reliability.
+> * **How you would know it worked:** You will know your evaluation numbers are trustworthy when you run inference on a brand-new, completely segregated batch of aircraft photos taken in different lighting conditions or on different airframes, and the evaluation script generates a confusion matrix without prior data contamination.
+>
+> ### 6. How clear and honest my README is for a non technical reader
+>
+> * **What you did well:** Using analogies like homework, practice quizzes, and final exams makes the core concepts accessible to a non-technical stakeholder without dumbing down the underlying methodology.
+> * **What I would do differently and why:** While the educational analogies are charming, the README glosses over the severity of the data leak and test-set contamination. For an aerospace safety application, transparency about dataset flaws must take precedence over narrative simplicity so that leadership or external auditors understand the exact operational risk.
+> * **How you would know it worked:** You will know it worked when a non-technical reader can explain back to you both *what* the model does and *why* the current accuracy numbers carry an asterisk due to data leakage.
+>
+> ### Top 5 fixes
+>
+> 1. **Re-split the dataset at the source-photo level** to completely eliminate data leakage between train, validation, and test sets. *(Effort: Medium)*
+> 2. **Isolate the test set** and never look at its metrics again until model development and hyperparameter tuning are completely frozen. *(Effort: Small)*
+> 3. **Tune the confidence threshold downward** to prioritize high recall for cracks and dents, acknowledging that missing a structural flaw is worse than a false alarm. *(Effort: Small)*
+> 4. **Implement automated data validation checks** in your ingestion pipeline to catch mixed bounding box and polygon labels proactively. *(Effort: Medium)*
+> 5. **Rewrite the README risk disclosures** to explicitly emphasize that current metrics are inflated and unsafe for operational deployment until re-evaluated on clean data. *(Effort: Small)*
+>
+> Which of these five fixes do you want to dig into first?
+
+### My notes on Gemini's answer
+
+Following the professor's rule to check what it tells you:
+
+* **Its numbers match the repo.** The 67 skipped images, 3,174 total, 18 seconds per epoch, and 162 missed cracks and 181 missed dents are all correct.
+* **One small mix up.** Gemini calls the flips and brightness changes *your augmentations*. I did not make those copies. They came already inside the Roboflow download. The fix it suggests is still right.
+* **A 95 percent crack recall goal is a big ask.** At 0.25 the model finds 70 percent of cracks. Getting to 95 would likely mean a lot more false alarms. That trade is worth measuring before I promise it.
+* **Where it agrees with Claude:** both put the re-split first, both say I should stop peeking at the test set, and both say the threshold should be picked on purpose instead of left at the default.
+* **Where it differs:** Gemini adds an automatic label check at load time and pushes harder on the README warning. Claude adds running more than one seed, checking false alarms by eye, and noticing that the whole dataset only comes from about 246 original photos.
+
+---
+
 ## A sharper version for Claude
 
 I ran the prompt above through Claude and asked it to make the prompt better. Here is what changed and why.
