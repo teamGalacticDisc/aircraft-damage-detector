@@ -145,7 +145,7 @@ How to use it: do each step yourself as you read it. GenAI often makes APA mista
 
 ## Putting it to work: a review of this project
 
-This is prompt 5 (Challenge my thinking) aimed at the whole project instead of one argument. Every bracket is already filled in with the real numbers from this repo, so it can be pasted straight into Google Gemini or Claude.
+This is prompt 5 (Challenge my thinking) aimed at the whole project instead of one argument. Every bracket is already filled in with the real numbers from this repo, so it can be pasted straight into Google Gemini, ChatGPT, or Claude. I used the exact same prompt in each one so the answers can be compared fairly.
 
 I wanted a reviewer, not a ghostwriter. So the prompt asks it to point out problems and explain what it would do differently, and it tells it not to rewrite my code or my README. I decide what to change, and I make the changes.
 
