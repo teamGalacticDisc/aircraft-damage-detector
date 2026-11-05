@@ -201,3 +201,155 @@ Then end with a section called Top 5 fixes, ranked by how much each would change
 * **Decide for myself.** Not every suggestion is worth doing for a class project. Write down why I keep or drop each one.
 * **Follow up with prompt 3 or 4.** If it uses a term I do not understand, like stratified split or grouped split, that is a Socratic tutor question. If I think I get it, explain it back first.
 * **Disclose it.** Screenshot the prompt and the answer and add them to my AI Use Disclosure Form.
+
+---
+
+## A sharper version for Claude
+
+I ran the prompt above through Claude and asked it to make the prompt better. Here is what changed and why.
+
+* **The details go inside labeled tags**, like `<dataset>` and `<results>`. Claude is trained to pay attention to tags like these, so it keeps the facts separate from the instructions and is less likely to mix up which number goes with which run.
+* **It has to quote the number it is talking about.** That makes it easy for me to check every point against the repo, and it makes made up numbers stand out.
+* **It has to rank by trust, not by polish.** A reviewer can spend all its words on wording in the README when the real problem is the data split.
+* **It gets a sense of the stakes.** Saying who would use the tool and what a miss costs helps it judge which fixes matter.
+* **It is told where the facts came from.** Every number came from my own runs, so it should treat them as true and judge my reasoning, not argue with the numbers.
+
+Paste the README and `train.py` into the chat right below the prompt, or upload them, so it can see the real files.
+
+```
+<role>
+You are a senior computer vision engineer who has built defect detection models for aviation maintenance, and a patient teacher. Review this student capstone the way a tough but fair thesis advisor would. Care most about one question: can someone trust these results?
+</role>
+
+<task>
+Find the weaknesses in my project and tell me what you would do differently and why.
+Rules:
+1. Do not rewrite my code, README, or write up. Do not hand me sentences to paste. Explain problems and fixes in your own words, and I will make the changes.
+2. Every time you criticize something, quote the exact number or file it comes from, so I can check you.
+3. Treat the numbers below as correct. They came from my own runs. Judge my reasoning and my methods, not the numbers.
+4. If you are not sure about something, say so. Do not invent sources, statistics, or Ultralytics settings. If you name a setting, tell me where in the Ultralytics docs to confirm it.
+5. Rank problems by how much they hurt trust in the results, not by how easy they are to fix.
+</task>
+
+<context>
+<about_me>
+Student in ARIN 320, an AI course at UMGC. Background in cybersecurity and military aviation (F/A-18). Comfortable running Python scripts, still learning machine learning terms, so explain any term a beginner would not know.
+</about_me>
+
+<purpose>
+The model finds cracks and dents in photos of aircraft skin. It is a helper only. It points at spots worth checking, and a human inspector still walks the whole aircraft and makes every call. A missed crack is far worse than a false alarm.
+</purpose>
+
+<dataset>
+Roboflow aircraft-damage-detection-1j9qk, version 5, YOLOv8 format, chosen by my professor. 3,174 images at 640x640, classes crack and dent. Split: 2,574 train, 452 validation, 148 test. Professor's reference: about 0.58 mAP50 after 20 epochs.
+Leak: many file names follow N_k, where each k is an augmented copy (brighter, darker, flipped) of source photo N. Grouping by source, the 3,174 images come from only about 246 original photos. All 99 sources behind the validation images and all 37 behind the test images also appear in train. I documented this but have not re-split yet, so every number below is from the leaky split.
+</dataset>
+
+<label_fix>
+67 images (62 train, 3 val, 2 test) mixed box rows and polygon rows in one label file, so YOLO dropped those images and their 359 marks. fix_labels.py turns each polygon into its tightest box, clamped to 0 to 1, and drops it if IoU with an existing box is above 0.5 (15 spots in 13 images were marked twice). After the fix, 0 images are skipped.
+</label_fix>
+
+<training>
+Ultralytics 8.4, pretrained yolov8n.pt, imgsz 640, batch 16, seed 0, patience 15, default augmentation, one RTX 2080 Super. One seed per run.
+</training>
+
+<results>
+Run | val mAP50 | test mAP50
+v8n, 20 epochs, old labels | 0.588 | 0.630
+v8n, 60 epochs, old labels | 0.610 | 0.692
+v8n, 60 epochs, fixed labels (final) | 0.632 | 0.672
+v8s, 60 epochs, fixed labels | 0.623 | 0.695
+v8s, 100 epochs, fixed labels, early stop at 89 | 0.604 | 0.661
+I chose v8n 60 because it won validation and is about 3 times smaller. I looked at test scores for every run.
+Final model: val precision 0.69, recall 0.61. Test precision 0.69, recall 0.64. Crack mAP50 0.69 val, 0.68 test. Dent 0.57 val, 0.67 test.
+Validation confusion matrix at conf 0.25 (Ultralytics default, not tuned): 538 cracks, 484 dents. Found 376 cracks and 303 dents. Missed 162 and 181. False alarms 155 crack and 198 dent. 0 crack and dent mixups. Versus my first model on the same photos: 48 more cracks and 11 more dents found, 37 more false alarms.
+</results>
+
+<my_claims>
+The label fix and longer training made the model better. The small model is the right pick. Recall matters more than precision here. The scores are optimistic because of the leak.
+</my_claims>
+
+<least_sure_about>
+How much of the score is real versus leak. Whether my model comparison survives a fixed split. Whether 0.25 is the right threshold when missing damage is the worst outcome.
+</least_sure_about>
+</context>
+
+<format>
+Use these six headings in order: Data split and leak, Labels, Model and epochs, Threshold, Evaluation, README.
+Under each heading write three short parts:
+  Kept: what I did well, one sentence, or skip it.
+  Change: what you would do differently and why, in plain language, quoting the number it is about.
+  Check: the exact number or test that tells me the change worked.
+Then a section called Top 5 fixes, ranked by impact on trust, each with effort small, medium, or large.
+Under 1,200 words. When you finish, ask me which fix I want to work on first and wait for my answer.
+</format>
+```
+
+---
+
+## What Claude said it would do differently
+
+I ran the sharper prompt above. This is a summary of what came back, checked against the repo. I have not made these changes yet. I am writing them down so I can decide which ones are worth doing and so my AI use is out in the open.
+
+### 1. Data split and leak (biggest problem)
+
+**Kept:** I found the leak and said so in the README instead of hiding it.
+
+**Change:** Re-split the data by original photo, not by image. Every copy of photo 158 goes in the same group, so the quiz and exam only hold photos the model has never seen any version of. The surprise here is how few real photos there are. The 3,174 images come from only about 246 original photos, and 133 of those have copies sitting in validation or test as well as in training. So the model really learned from a couple hundred pictures, dressed up as thousands.
+
+**Check:** Train the same final settings on the new split and compare. If validation mAP50 drops a lot from 0.632, that gap is roughly how much the leak was helping. That new number is the one I should put at the top of the README.
+
+### 2. Evaluation
+
+**Kept:** I graded every model on the same fixed labels, so the comparison was fair between runs.
+
+**Change:** Two things. First, I looked at the test score for all five runs, which turns the final exam into another practice quiz. After the re-split, pick the model using validation only and open the test set one time at the end. Second, each run used one seed. Differences like 0.632 versus 0.623 are small enough that a different random start could flip them. Run the top two setups with 3 seeds each and compare the averages.
+
+**Check:** If v8n still beats v8s on the average of 3 seeds on the new split, my model choice holds. If the averages overlap, I should say they tie.
+
+### 3. Threshold
+
+**Kept:** I explained why a miss costs more than a false alarm, and I used the same 0.25 in the confusion matrix and in `detect.py`.
+
+**Change:** 0.25 is just the default. Since I said recall matters most, pick the threshold on purpose. Lower it on the validation set until recall hits a goal, for example finding 8 out of 10 damage spots, and then report how many false alarms that costs per photo. That turns my claim into a number an inspector can understand: to catch 80 percent of damage, expect about X extra boxes per photo.
+
+**Check:** Recall and false alarms per photo at the chosen threshold, written next to the confusion matrix. Also check it per photo, not just per box: out of the validation photos with real damage, how many got at least one box? For an inspector, being sent to the right panel matters more than drawing a perfect box.
+
+### 4. Labels
+
+**Kept:** The fix is simple, the script is in the repo, and it took skipped photos from 67 to 0.
+
+**Change:** The 0.5 overlap rule could throw away a real second crack that sits right next to another one. Look at the 13 photos where it dropped a box and confirm by eye that each one really was a double mark. Also look at a sample of the 353 false alarms, maybe 50, and count how many are real damage the labeler missed. If a lot of them are, the model is better than the score says and the labels are the weak spot.
+
+**Check:** A short count in the README: of 50 false alarms I checked, N were real unmarked damage.
+
+### 5. Model and epochs
+
+**Kept:** Trying the bigger model and the longer run was the right move, and the reason for picking the small one (size and speed on a tablet) makes sense for the flight line.
+
+**Change:** With only about 246 real photos, the model is likely memorizing. That fits what I saw, where 100 epochs did worse than 60. On the new split, try stronger augmentation, or freeze the early layers of the pretrained model, before trying anything bigger. More real photos would help more than any setting.
+
+**Check:** The gap between training loss and validation loss on the new split. If training keeps improving while validation stalls, it is memorizing.
+
+### 6. README
+
+**Kept:** It is easy to read, the homework, quiz, and exam comparison works, and it says plainly that the model misses about 1 in 3.
+
+**Change:** The short version near the top shows 0.632 and 0.672 before it mentions the leak. A reader who stops there walks away thinking those numbers are real world. Put a one line warning right next to the first numbers. Once the re-split is done, lead with the honest number and keep the leaky one only for comparing against the professor's 0.58.
+
+**Check:** Someone who reads only the first screen should know the score is optimistic.
+
+### Top 5 fixes
+
+| Rank | Fix | Effort |
+|---|---|---|
+| 1 | Re-split by original photo and retrain | Medium |
+| 2 | Pick the model on validation only, open the test set once | Small |
+| 3 | Choose the threshold from a recall goal and report false alarms per photo | Small |
+| 4 | Run the top two setups with 3 seeds | Medium |
+| 5 | Check 50 false alarms and the 13 dropped doubles by eye | Medium |
+
+### What I checked
+
+* The count of about 246 original photos comes from grouping the file names in the dataset myself, not from the AI. 160 follow the N_k pattern. Another 85 or so are grouped by the name before Roboflow's `.rf.` tag, and all of those are only in train. Of the 160, 96 also show up in validation, 34 in test, and 3 in both, which gives the 99 and 37 from the README.
+* Every other number above matches the README and `results/eval_report.json`.
