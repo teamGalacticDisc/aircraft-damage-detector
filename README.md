@@ -79,6 +79,16 @@ I used **YOLOv8n**, the smallest YOLO model.
 
 The small one won the practice quiz, which has 452 photos. The bigger one won the final exam by a little, but the exam only has 148 photos, so a difference that small could just be luck. The small model is about 3 times smaller and faster, which matters for a tablet on the flight line. So I picked the small one.
 
+## What the Ultralytics docs told me
+
+I went and read the official training guide myself, the [Ultralytics Train mode page](https://docs.ultralytics.com/modes/train/), on November 5, 2026. It explained a few things I had run into, and I checked the settings against the Ultralytics version I used (8.4).
+
+**Why I only used one of my two graphics cards.** My PC has two RTX 2080 Supers, so I expected training to use both. The guide says training on more than one card does not work on Windows with PyTorch 2.4 or newer. The Windows version of PyTorch is missing a piece the cards need to talk to each other. I am on Windows with PyTorch 2.11, so I trained on one card with `device=0`. That is what the guide tells Windows users to do. Using both would mean switching to Linux.
+
+**Why my 100 epoch run stopped at 89.** The setting called `patience` tells training how many epochs to wait for the practice quiz score to get better before giving up. The default is 100. I set it to 15. In that run the score stopped improving, so after 15 epochs with nothing better, it stopped on its own at epoch 89. It is like a coach ending practice early once the team stops getting better.
+
+**How the saved model gets picked.** The guide says the validation score decides which epoch gets saved as `best.pt`. So the model I saved is the epoch with the best practice quiz score, not just the last one. For the run that stopped at 89, the saved model came from an earlier, better epoch. This is also why the test photos have to stay out of these choices.
+
 ## How it got better
 
 Every epoch the model took a practice quiz on the validation photos. The score here is **mAP50**. In plain words, it asks: when the model drew a box, was it in the right spot and did it pick the right label? It goes from 0 (always wrong) to 1 (perfect). These numbers come from the final model's training log in `results/results.csv`.
