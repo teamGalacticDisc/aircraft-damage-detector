@@ -18,7 +18,9 @@ That is all it does. It does not decide whether the aircraft can fly.
 
 ## The short version
 
-| | First try | Final model |
+**The most important number in this project is at the bottom of this section.** The table below is what I got on the dataset the way it was handed to us. Later I found out that the quiz and exam photos had copies sitting in the training photos, so these scores are way too high. When I fixed that, the honest score dropped to about **0.16 on the practice quiz and 0.06 on the final exam**. See [The honest re-test](#the-honest-re-test).
+
+| On the original split (leaky) | First try | Final model |
 |---|---|---|
 | Training | 20 epochs on a regular computer | 60 epochs on a graphics card, with fixed labels |
 | Practice quiz score (validation mAP50) | 0.588 | **0.632** |
@@ -28,6 +30,84 @@ That is all it does. It does not decide whether the aircraft can fly.
 | Times it mixed up a crack and a dent | 0 | 0 |
 
 All the scores in this table were graded on the same photos, so the comparison is fair. My professor's reference run on this dataset got about 0.58.
+
+| On a clean split (honest) | Practice quiz (validation mAP50) | Final exam (test mAP50) |
+|---|---|---|
+| Best setup, YOLOv8s, average of 3 runs | 0.158 | **0.056** |
+
+## The honest re-test
+
+After I finished, I asked Google Gemini, ChatGPT and Claude to review this project (see [PROMPTS.md](PROMPTS.md)). All three said the same thing first: split the photos by original photo, so no copy of a quiz or exam photo is in the training pile. So I did that, and then tested the rest of their advice.
+
+### Splitting by original photo
+
+`split_by_source.py` groups every photo with its copies two ways. First by file name, since copies share a number like 158 at the front. Then by how the photo looks: it shrinks every photo to a tiny 32 by 32 gray picture and compares them, flipped and not flipped. I looked at sample pairs by eye to pick the cutoff. That second check caught 47 more copies that had different names.
+
+The surprise: the 3,174 photos come from only **199 different original photos**. Each original was turned into about 16 copies by brightening, darkening, flipping, rotating and cropping.
+
+| Group | Photos | Original photos |
+|---|---|---|
+| Train | 2,251 | 138 |
+| Validation | 471 | 33 |
+| Test | 452 | 28 |
+
+No original photo is in more than one group. Cracks and dents are spread about evenly across the groups. The exact split is saved in `results/clean_split_manifest.csv`, so anyone can rebuild it.
+
+### Testing the advice
+
+Every setup was trained 3 times with different random starts (seeds), because one run can get lucky. I picked the winner using only the practice quiz. The final exam photos stayed locked until the very end.
+
+| Setup | Whose idea | Practice quiz mAP50, average of 3 | Lowest to highest run |
+|---|---|---|---|
+| **Bigger model, YOLOv8s** | ChatGPT and Claude | **0.158** | 0.142 to 0.178 |
+| Stronger augmentation | Claude | 0.145 | 0.134 to 0.158 |
+| Same settings as before, YOLOv8n | All three | 0.143 | 0.133 to 0.151 |
+| Extra weight for the weaker class | My own reading of the Ultralytics docs | 0.141 | 0.130 to 0.154 |
+| Freeze the first 10 layers | Claude | 0.113 | 0.098 to 0.125 |
+
+What this tells me:
+
+* **The bigger model did best, but only by a hair.** Its runs overlap with the plain small model. With 3 runs each, I would call it a lean, not a win.
+* **Freezing layers did worst, on every run.** Those early layers learned from everyday photos like people and cars. Locking them means they never get to learn what aircraft damage looks like.
+* **Stronger augmentation and extra class weight changed nothing overall.** The class weight helped cracks a little and hurt dents a little, so it evened out.
+* **The data matters way more than the settings.** Every setup landed between 0.11 and 0.16. Going from the leaky split to the clean split dropped the score from 0.63 to about 0.15.
+
+### The confidence cutoff
+
+Gemini said to lower the cutoff to 0.05 or 0.10. Claude and ChatGPT said to pick it from a goal, like finding 8 out of 10 damage spots. `analyze_threshold.py` checks every cutoff and puts error bars on it by resampling whole original photos.
+
+Bigger model on the practice quiz, average of 3 runs:
+
+| Cutoff | Cracks found | Dents found | False alarms per photo | Photos with damage that got at least one right box |
+|---|---|---|---|---|
+| 0.05 | 27 percent | 34 percent | 4.0 | 42 percent |
+| 0.10 | 21 percent | 29 percent | 1.8 | 35 percent |
+| 0.25 (what I used before) | 10 percent | 21 percent | 0.5 | 19 percent |
+| 0.50 | 3 percent | 11 percent | 0.1 | 7 percent |
+
+Lowering the cutoff does help. At 0.05 it finds almost 3 times as many cracks as at 0.25. But it also raises 4 false alarms on every photo, and it still misses most damage. Gemini's goal of 95 percent of cracks, and an 8 out of 10 goal, are both out of reach for this model. The error bars are wide too: on one run, crack recall at 0.05 could be anywhere from 13 to 46 percent depending on which photos you happen to test on.
+
+### The final exam, opened once
+
+I tested the bigger model's 3 runs on the 452 test photos one time.
+
+| | Average of 3 runs | Lowest to highest |
+|---|---|---|
+| Test mAP50 | **0.056** | 0.040 to 0.082 |
+| Crack mAP50 | 0.099 | 0.067 to 0.149 |
+| Dent mAP50 | 0.013 | 0.012 to 0.015 |
+| Cracks found at cutoff 0.05 | 21 percent | |
+| Dents found at cutoff 0.05 | 8 percent | |
+
+The exam came out even lower than the quiz, mostly because of dents. I looked into why. **284 of the 461 dents in the test group come from one original photo**, a smooth panel covered in small, faint dents. Looking at it, some dents in that photo do not seem to be marked at all.
+
+![Faint dents that dominate the test photos](results/images/test_hail_dents.jpg)
+
+The model never saw anything like it in training, so it found almost none of them. With only 28 original photos in the test group, one hard photo can swing the whole score. That is also why ChatGPT said 148 or 452 test photos are not really that many separate tries.
+
+### What I take away from this
+
+The 0.63 was the model remembering photos it had already seen. The honest answer is that 199 photos is not enough for this model to learn cracks and dents well enough to find them on a new aircraft. The fixes that matter most now are more real photos, checking the labels, and maybe a bigger image size so thin cracks do not shrink to almost nothing. Tuning settings will not close a gap this big.
 
 ## The pictures it learned from
 
@@ -43,7 +123,7 @@ I used the Aircraft Damage Detection dataset from the youssef-donia-fhktl worksp
 
 **Why keep the test photos separate?** If you study the exam questions, a perfect score does not prove you learned anything. Keeping the test photos hidden until the end is supposed to show how the model does on photos it has never seen, which is what would happen on a real flight line.
 
-**A catch I found in this dataset.** The dataset makers took each original photo and made several copies of it, a little brighter, darker or flipped, and those copies got spread across all three groups. For example, the same damaged wing (photo 158) shows up 3 times in training and 2 times in validation. All 99 original photos behind the validation pictures and all 37 behind the test pictures also show up in training. So the model has seen a close cousin of almost every quiz and exam photo. That means my scores are probably higher than what it would get on brand new photos from a real hangar. My professor's 0.58 used the same dataset, so comparing with it is still fair.
+**A catch I found in this dataset.** The dataset makers took each original photo and made several copies of it, a little brighter, darker or flipped, and those copies got spread across all three groups. For example, the same damaged wing (photo 158) shows up 3 times in training and 2 times in validation. All 99 original photos behind the validation pictures and all 37 behind the test pictures also show up in training. So the model has seen a close cousin of almost every quiz and exam photo. That means my scores are higher than what it would get on brand new photos from a real hangar. My professor's 0.58 used the same dataset, so comparing with it is still fair. I later fixed this and measured how much it mattered. See [The honest re-test](#the-honest-re-test).
 
 ## Fixing the labels
 
@@ -183,7 +263,7 @@ The biggest gains from here would come from more and better labeled photos, espe
 
 * It was trained on general aircraft photos from the internet, not F/A-18 inspection photos. Before anyone used something like this for real, it would need to be retrained and tested on photos from that aircraft.
 * It only knows two things, cracks and dents. It has never been taught corrosion, missing fasteners or anything else.
-* The scores are probably a little high because of the photo copies spread across the groups (see A catch I found in this dataset above).
+* The scores on the original split are far too high because of the photo copies spread across the groups. On a clean split the model scores about 0.06 on the final exam (see The honest re-test above). It is not ready to help a real inspector.
 
 ## Try it yourself
 
@@ -202,6 +282,19 @@ python evaluate.py
 
 `train.py` uses the first graphics card. If you do not have one, change `device=0` to `device="cpu"` and plan on most of a day.
 
+To run the honest re-test instead:
+
+```
+python fix_labels.py
+python split_by_source.py --use-manifest
+python check_labels.py data_clean
+python run_experiments.py --gpu 0 --runs A_base_s0,B_v8s_s0
+python analyze_threshold.py clean_results/B_v8s_s0_best.pt valid
+python final_test.py
+```
+
+On Windows with two cards, keep `--workers` at 3 or less. With 8 helpers per card, my PC ran out of memory.
+
 ## How I use AI to check my work
 
 This is an AI class, so I also wrote down how I use GenAI tools to learn instead of doing the work for me. [PROMPTS.md](PROMPTS.md) has my professor's four part prompt method (Role, Task, Context, Format), the six prompts that go with it, and a filled in prompt that asks Google Gemini, ChatGPT, or Claude to review this project and tell me what it would do differently. It also has the reviews Google Gemini, ChatGPT, and Claude gave back, with screenshots, my notes on what I checked, and a table comparing all three.
@@ -211,12 +304,18 @@ This is an AI class, so I also wrote down how I use GenAI tools to learn instead
 | File | What it is |
 |---|---|
 | `fix_labels.py` | Turns the mixed outline labels into boxes so no photos get thrown out |
+| `check_labels.py` | Checks every label file before training and stops if one would get skipped (Gemini's idea) |
+| `split_by_source.py` | Makes the clean split so no original photo is in two groups |
+| `run_experiments.py` | Trains every setup from the AI reviews 3 times on the clean split |
+| `analyze_threshold.py` | Checks every confidence cutoff with error bars |
+| `final_test.py` | Opens the test photos one time for the winning setup |
 | `train.py` | Teaches the model |
 | `evaluate.py` | Grades the model on validation and test photos |
 | `detect.py` | Runs the model on your own photo |
 | `PROMPTS.md` | The prompt method I use with GenAI, plus a ready to paste project review prompt |
 | `model/best.pt` | The final trained model |
 | `model/first_model_20_epochs.pt` | My first try, kept so you can compare |
+| `model/clean_split_v8s.pt` | The best model from the honest re-test (YOLOv8s, seed 0) |
 | `results/results.csv` | The score for every epoch of the final model |
 | `results/results.png` | Chart of all 60 epochs |
 | `results/confusion_matrix.png` | Scoreboard of hits, misses and false alarms on the validation photos |
@@ -224,6 +323,8 @@ This is an AI class, so I also wrote down how I use GenAI tools to learn instead
 | `results/eval_report.json` | Every final number in one file |
 | `results/first_run/` | The same charts and log from my first try |
 | `results/ai_review/` | Screenshots of the project reviews from Google Gemini and ChatGPT |
+| `results/clean_split_manifest.csv` | Every photo, which original it came from, and which group it is in |
+| `results/clean/` | Scores for all 15 re-test runs, the cutoff checks and the one time final exam |
 | `results/images/` | Before and after pictures, plus model guesses next to the answer key |
 
 ## Credits

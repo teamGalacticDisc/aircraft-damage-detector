@@ -1,0 +1,184 @@
+{
+  "weights": "B_v8s_s1_best.pt",
+  "split": "valid",
+  "photos": 471,
+  "original_photos": 33,
+  "cutoffs": {
+    "0.05": {
+      "crack_recall": {
+        "value": 0.302,
+        "low": 0.166,
+        "high": 0.441
+      },
+      "dent_recall": {
+        "value": 0.358,
+        "low": 0.054,
+        "high": 0.556
+      },
+      "false_alarms_per_photo": {
+        "value": 4.246,
+        "low": 3.232,
+        "high": 5.371
+      },
+      "photo_recall": {
+        "value": 0.447,
+        "low": 0.278,
+        "high": 0.594
+      }
+    },
+    "0.1": {
+      "crack_recall": {
+        "value": 0.234,
+        "low": 0.114,
+        "high": 0.365
+      },
+      "dent_recall": {
+        "value": 0.318,
+        "low": 0.031,
+        "high": 0.535
+      },
+      "false_alarms_per_photo": {
+        "value": 1.975,
+        "low": 1.317,
+        "high": 2.826
+      },
+      "photo_recall": {
+        "value": 0.4,
+        "low": 0.248,
+        "high": 0.544
+      }
+    },
+    "0.15": {
+      "crack_recall": {
+        "value": 0.195,
+        "low": 0.09,
+        "high": 0.322
+      },
+      "dent_recall": {
+        "value": 0.294,
+        "low": 0.027,
+        "high": 0.532
+      },
+      "false_alarms_per_photo": {
+        "value": 1.227,
+        "low": 0.756,
+        "high": 1.874
+      },
+      "photo_recall": {
+        "value": 0.349,
+        "low": 0.194,
+        "high": 0.495
+      }
+    },
+    "0.2": {
+      "crack_recall": {
+        "value": 0.163,
+        "low": 0.069,
+        "high": 0.27
+      },
+      "dent_recall": {
+        "value": 0.26,
+        "low": 0.013,
+        "high": 0.498
+      },
+      "false_alarms_per_photo": {
+        "value": 0.877,
+        "low": 0.464,
+        "high": 1.456
+      },
+      "photo_recall": {
+        "value": 0.298,
+        "low": 0.16,
+        "high": 0.43
+      }
+    },
+    "0.25": {
+      "crack_recall": {
+        "value": 0.125,
+        "low": 0.048,
+        "high": 0.244
+      },
+      "dent_recall": {
+        "value": 0.231,
+        "low": 0.007,
+        "high": 0.504
+      },
+      "false_alarms_per_photo": {
+        "value": 0.652,
+        "low": 0.287,
+        "high": 1.263
+      },
+      "photo_recall": {
+        "value": 0.234,
+        "low": 0.108,
+        "high": 0.369
+      }
+    },
+    "0.3": {
+      "crack_recall": {
+        "value": 0.085,
+        "low": 0.022,
+        "high": 0.189
+      },
+      "dent_recall": {
+        "value": 0.217,
+        "low": 0.0,
+        "high": 0.478
+      },
+      "false_alarms_per_photo": {
+        "value": 0.467,
+        "low": 0.166,
+        "high": 0.954
+      },
+      "photo_recall": {
+        "value": 0.179,
+        "low": 0.068,
+        "high": 0.3
+      }
+    },
+    "0.4": {
+      "crack_recall": {
+        "value": 0.057,
+        "low": 0.007,
+        "high": 0.142
+      },
+      "dent_recall": {
+        "value": 0.189,
+        "low": 0.0,
+        "high": 0.456
+      },
+      "false_alarms_per_photo": {
+        "value": 0.263,
+        "low": 0.049,
+        "high": 0.628
+      },
+      "photo_recall": {
+        "value": 0.123,
+        "low": 0.03,
+        "high": 0.232
+      }
+    },
+    "0.5": {
+      "crack_recall": {
+        "value": 0.036,
+        "low": 0.002,
+        "high": 0.104
+      },
+      "dent_recall": {
+        "value": 0.151,
+        "low": 0.0,
+        "high": 0.43
+      },
+      "false_alarms_per_photo": {
+        "value": 0.174,
+        "low": 0.013,
+        "high": 0.539
+      },
+      "photo_recall": {
+        "value": 0.083,
+        "low": 0.007,
+        "high": 0.195
+      }
+    }
+  }
+}

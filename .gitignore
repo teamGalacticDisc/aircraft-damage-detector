@@ -4,3 +4,7 @@ runs/
 *.zip
 __pycache__/
 yolov8n.pt
+data_clean/
+clean_results/
+runs_clean/
+yolov8s.pt

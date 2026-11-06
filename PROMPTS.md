@@ -520,3 +520,46 @@ I pasted the sharper prompt above into **ChatGPT** on November 5, 2026. I did no
 | Stronger README warning | Fix 5 | Folded into README notes | Mentioned under README |
 
 All three put the same thing first: re-split the data so no copy of a photo is in more than one group. When three different tools agree on the top problem, that is a pretty strong sign it is the right place to start.
+
+---
+
+## What happened when I tried the advice
+
+I did not just read the three reviews. I tested them. The full numbers are in the README under [The honest re-test](README.md#the-honest-re-test). Here is how each reviewer's advice held up.
+
+### The fix all three agreed on
+
+**Re-split by original photo.** This was the most important thing anybody said. Once no copy of a quiz or exam photo was in the training pile, the score fell from 0.632 to about 0.15 on the practice quiz and 0.056 on the final exam. The old score was mostly the model remembering photos. All three reviewers get credit for this one.
+
+### Scoreboard
+
+| Advice | From | What happened | Verdict |
+|---|---|---|---|
+| Re-split by original photo | All three | Showed the real score is about 0.06 to 0.16, not 0.63 | Most important finding |
+| Open the test photos only once | All three | Did it. Picked the winner on validation, then tested once | Right, and easy |
+| Bigger model, YOLOv8s | ChatGPT and Claude | Best on validation, 0.158 vs 0.143, but the runs overlap | Small lean, not proven |
+| Run more than one seed | ChatGPT and Claude | Showed the gap between setups is about the same size as luck | Right, kept me from overclaiming |
+| Error bars by resampling whole photos | ChatGPT | Bars are wide, crack recall 13 to 46 percent on one run | Right, the test group is small |
+| Lower the cutoff to 0.05 or 0.10 | Gemini | Cracks found went from 10 to 27 percent, but 4 false alarms per photo | Right direction |
+| Aim for 95 percent crack recall | Gemini | Best possible was about 27 percent | Not reachable with this model |
+| Pick the cutoff from a recall goal | Claude and ChatGPT | An 8 out of 10 goal was not reachable either | Right idea, the model is too weak for it |
+| Automatic label check | Gemini | `check_labels.py` catches all 67 bad files in the raw download | Works |
+| Stronger augmentation | Claude | 0.145, no change | No help |
+| Freeze the first 10 layers | Claude | 0.113, worst on every run | Hurt |
+| Extra weight for dents (my own idea from the Ultralytics docs) | Me | Cracks up a little, dents down a little, 0.141 overall | No net help |
+
+### Who did better and who did worse
+
+**ChatGPT's advice held up best.** Almost all of it was about measuring honestly: separate groups, more than one seed, error bars by photo group, open the test once. Every one of those changed how much I should trust a number, and none of them turned out wrong.
+
+**Gemini was right on the big picture but too hopeful on the numbers.** Its top fix was correct, its label check works, and lowering the cutoff did find more damage. But a 95 percent crack goal was never realistic. It also called the photo copies my augmentations when they came with the download.
+
+**Claude had the most misses on model tweaks.** Its re-split advice was correct, and its bigger model idea tied for best. But freezing layers was the worst setup I tried, and stronger augmentation did nothing.
+
+### A number I had to correct
+
+The prompts and the Claude review above say about 246 original photos. That count came from grouping file names only. When I also compared how the photos look, 47 more copies with different names turned up, so the real number is 199.
+
+### What none of them predicted
+
+None of them guessed how big the drop would be. And none of them could have known that one test photo full of faint dents holds 284 of the 461 test dents. Both of those I only found by running the tests and looking at the photos myself. That is the professor's rule in action: check what it tells you.

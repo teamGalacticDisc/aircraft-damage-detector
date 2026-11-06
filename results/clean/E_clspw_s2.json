@@ -1,0 +1,17 @@
+{
+  "name": "E_clspw_s2",
+  "setup": "E_clspw",
+  "seed": 2,
+  "weights": "yolov8n.pt",
+  "extra": {
+    "cls_pw": 1.0
+  },
+  "epochs_run": 56,
+  "best_epoch": 53,
+  "val_mAP50": 0.15378770536783465,
+  "val_mAP50_95": 0.06755910229097203,
+  "val_precision": 0.2809927892309183,
+  "val_recall": 0.2236129536580141,
+  "crack_mAP50": 0.1577428419050537,
+  "dent_mAP50": 0.14983256883061558
+}

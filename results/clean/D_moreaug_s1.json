@@ -1,0 +1,19 @@
+{
+  "name": "D_moreaug_s1",
+  "setup": "D_moreaug",
+  "seed": 1,
+  "weights": "yolov8n.pt",
+  "extra": {
+    "degrees": 10,
+    "mixup": 0.15,
+    "translate": 0.2
+  },
+  "epochs_run": 44,
+  "best_epoch": 29,
+  "val_mAP50": 0.15763538373535832,
+  "val_mAP50_95": 0.05862007542246648,
+  "val_precision": 0.27768194354577636,
+  "val_recall": 0.22268280675117536,
+  "crack_mAP50": 0.1215568671874124,
+  "dent_mAP50": 0.19371390028330424
+}

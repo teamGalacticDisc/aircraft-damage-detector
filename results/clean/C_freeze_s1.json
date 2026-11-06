@@ -1,0 +1,17 @@
+{
+  "name": "C_freeze_s1",
+  "setup": "C_freeze",
+  "seed": 1,
+  "weights": "yolov8n.pt",
+  "extra": {
+    "freeze": 10
+  },
+  "epochs_run": 32,
+  "best_epoch": 17,
+  "val_mAP50": 0.1252166666823052,
+  "val_mAP50_95": 0.049229424733431296,
+  "val_precision": 0.23296800256467962,
+  "val_recall": 0.17043861594140264,
+  "crack_mAP50": 0.11591022042520827,
+  "dent_mAP50": 0.1345231129394021
+}

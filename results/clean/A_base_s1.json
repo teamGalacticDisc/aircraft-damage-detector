@@ -1,0 +1,15 @@
+{
+  "name": "A_base_s1",
+  "setup": "A_base",
+  "seed": 1,
+  "weights": "yolov8n.pt",
+  "extra": {},
+  "epochs_run": 54,
+  "best_epoch": 39,
+  "val_mAP50": 0.15115857005580746,
+  "val_mAP50_95": 0.0649896915101688,
+  "val_precision": 0.320362039870158,
+  "val_recall": 0.1991359968732031,
+  "crack_mAP50": 0.13336636308606686,
+  "dent_mAP50": 0.16895077702554803
+}

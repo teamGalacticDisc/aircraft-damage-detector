@@ -1,0 +1,15 @@
+{
+  "name": "B_v8s_s0",
+  "setup": "B_v8s",
+  "seed": 0,
+  "weights": "yolov8s.pt",
+  "extra": {},
+  "epochs_run": 47,
+  "best_epoch": 32,
+  "val_mAP50": 0.17772341613104714,
+  "val_mAP50_95": 0.07265819582124279,
+  "val_precision": 0.3214289960025606,
+  "val_recall": 0.24474874400694582,
+  "crack_mAP50": 0.16612982411641178,
+  "dent_mAP50": 0.18931700814568253
+}
